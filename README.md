@@ -1,0 +1,2 @@
+# WPFLocalizationRDTool
+为wpf程序开发国际化界面时采用了ResourceDictionary方式,方便进行统计翻译对应的语种翻译.类似于ResX Manager这样的工具,但仅限于采用esourceDictionary方式国际化的工具.
