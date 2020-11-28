@@ -1,0 +1,74 @@
+﻿<Window x:Class="LocalXamler.Pages.ShellView"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:LocalXamler.Pages"
+        mc:Ignorable="d"
+        Title="Stylet Start Project" Height="450" Width="800"
+        xmlns:s="https://github.com/canton7/Stylet"
+        d:DataContext="{d:DesignInstance local:ShellViewModel}">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"></RowDefinition>
+            <RowDefinition Height="*"></RowDefinition>
+            <RowDefinition Height="Auto"></RowDefinition>
+        </Grid.RowDefinitions>
+        <Grid Grid.Row="1">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"></ColumnDefinition>
+                <ColumnDefinition Width="Auto"></ColumnDefinition>
+                <ColumnDefinition Width="3*"></ColumnDefinition>
+            </Grid.ColumnDefinitions>
+            <Grid Grid.Column="0">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="*"></RowDefinition>
+                    <RowDefinition Height="Auto"></RowDefinition>
+                </Grid.RowDefinitions>
+                <TreeView ItemsSource="{Binding  Project.LangInfos}">
+                    <TreeView.ItemTemplate>
+                        <HierarchicalDataTemplate DataType="{x:Type local:LangInfo}" >
+                            <StackPanel>
+                                <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="Name:" />
+                                <TextBlock Text="{Binding Name}" />
+</StackPanel>
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="Path:" />
+                                    <TextBlock Text="{Binding Path}" />
+                                </StackPanel>
+                            </StackPanel>
+                        </HierarchicalDataTemplate>
+                    </TreeView.ItemTemplate>
+                </TreeView>
+                <StackPanel Grid.Row="1">
+                    <Button Content="Add"></Button>
+                    <Button Content="Delete"></Button>
+                </StackPanel>
+
+            </Grid>
+            <Grid Grid.Column="2">
+                <Grid.RowDefinitions>
+<RowDefinition Height="*"></RowDefinition>
+<RowDefinition Height="Auto"></RowDefinition>
+                </Grid.RowDefinitions>
+                <DataGrid AutoGenerateColumns="True" FontSize="16" BeginningEdit="DataGrid_OnBeginningEdit" CellEditEnding="DataGrid_OnCellEditEnding" ItemsSource="{Binding Project.Datas.DefaultView}">
+                    <DataGrid.Columns>
+                        <DataGridTemplateColumn Header="Actions"  IsReadOnly="True">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <Button Content="Remove" Click="ButtonBase_OnClick"/>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
+                    </DataGrid.Columns>
+                </DataGrid>
+                <StackPanel Grid.Row="1" Orientation="Horizontal">
+                    <Button Content="Save" Command="{s:Action Method=Save}"></Button>
+                </StackPanel>
+            </Grid>
+        </Grid>
+    </Grid>
+ 
+    
+</Window>
