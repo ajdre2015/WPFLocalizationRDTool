@@ -3,13 +3,13 @@ using System.Collections.Generic;
 
 namespace LocalXamler.Core
 {
-    public class DataSource<T>
+    public class DataSource<TItem, TValue> where TItem : ITimestampedData<TValue>
     {
         public string Name { get; private set; }
         public string Id { get; private set; }
         public bool IsHealthy { get; private set; }
 
-        private readonly ConcurrentQueue<T> _dataQueue;
+        private readonly ConcurrentQueue<TItem> _dataQueue;
 
         public DataSource(string name, string id)
         {
@@ -25,7 +25,7 @@ namespace LocalXamler.Core
             Name = name;
             Id = id;
             IsHealthy = true; // Default health status
-            _dataQueue = new ConcurrentQueue<T>();
+            _dataQueue = new ConcurrentQueue<TItem>();
         }
 
         public void SetHealthStatus(bool isHealthy)
@@ -33,12 +33,12 @@ namespace LocalXamler.Core
             IsHealthy = isHealthy;
         }
 
-        public void Add(T item)
+        public void Add(TItem item)
         {
             _dataQueue.Enqueue(item);
         }
 
-        public void AddRange(IEnumerable<T> items)
+        public void AddRange(IEnumerable<TItem> items)
         {
             if (items == null)
             {
@@ -50,12 +50,12 @@ namespace LocalXamler.Core
             }
         }
 
-        public bool TryDequeue(out T item)
+        public bool TryDequeue(out TItem item)
         {
             return _dataQueue.TryDequeue(out item);
         }
 
-        public bool TryPeek(out T item)
+        public bool TryPeek(out TItem item)
         {
             return _dataQueue.TryPeek(out item);
         }
