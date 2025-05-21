@@ -7,9 +7,9 @@ namespace LocalXamler.Core
     {
         public delegate bool TriggerCondition(TItem item);
 
-        public event EventHandler<TItem> OnTriggered;
+        public event EventHandler<TriggerEventArgs<TItem>> TriggerActivated;
 
-        private TriggerCondition _activeTriggerCondition;
+        private readonly ConcurrentDictionary<string, TriggerCondition> _triggers = new ConcurrentDictionary<string, TriggerCondition>();
 
         public string Name { get; private set; }
         public string Id { get; private set; }
@@ -39,19 +39,56 @@ namespace LocalXamler.Core
             IsHealthy = isHealthy;
         }
 
-        public void SetTrigger(TriggerCondition newCondition)
+        public void RegisterTrigger(string triggerName, TriggerCondition condition)
         {
-            _activeTriggerCondition = newCondition;
+            if (string.IsNullOrWhiteSpace(triggerName))
+            {
+                throw new System.ArgumentException("Trigger name cannot be null or whitespace.", nameof(triggerName));
+            }
+            if (condition == null)
+            {
+                throw new System.ArgumentNullException(nameof(condition), "Trigger condition cannot be null.");
+            }
+            _triggers.AddOrUpdate(triggerName, condition, (key, oldCondition) => condition);
+        }
+
+        public bool UnregisterTrigger(string triggerName)
+        {
+            if (string.IsNullOrWhiteSpace(triggerName))
+            {
+                return false; 
+            }
+            return _triggers.TryRemove(triggerName, out _);
+        }
+
+        public void ClearAllTriggers()
+        {
+            _triggers.Clear();
+        }
+
+        public IEnumerable<string> GetRegisteredTriggerNames()
+        {
+            return _triggers.Keys;
         }
 
         public void Add(TItem item)
         {
-            _dataQueue.Enqueue(item);
+            _dataQueue.Enqueue(item); // Enqueue the item first
 
-            // Check and invoke trigger
-            if (_activeTriggerCondition != null && _activeTriggerCondition(item))
+            // Iterate through all registered triggers.
+            // ConcurrentDictionary can be safely iterated even if modified concurrently from other threads in many scenarios.
+            // The items returned by GetEnumerator reflect the state of the dictionary at some point in time.
+            foreach (var triggerEntry in _triggers) 
             {
-                OnTriggered?.Invoke(this, item);
+                // triggerEntry is KeyValuePair<string, TriggerCondition>
+                // triggerEntry.Key is the trigger name (string)
+                // triggerEntry.Value is the TriggerCondition delegate
+
+                if (triggerEntry.Value(item)) // Check the condition using the delegate
+                {
+                    // Fire the new event, TriggerActivated, with TriggerEventArgs
+                    TriggerActivated?.Invoke(this, new TriggerEventArgs<TItem>(triggerEntry.Key, item));
+                }
             }
         }
 
@@ -61,14 +98,23 @@ namespace LocalXamler.Core
             {
                 throw new System.ArgumentNullException(nameof(items), "Items collection cannot be null.");
             }
-            foreach (var item in items)
+            foreach (var item in items) // Outer loop for each item in the input collection
             {
-                _dataQueue.Enqueue(item);
+                _dataQueue.Enqueue(item); // Enqueue the current item
 
-                // Check and invoke trigger for each item
-                if (_activeTriggerCondition != null && _activeTriggerCondition(item))
+                // Inner loop: Iterate through all registered triggers for the current item.
+                // ConcurrentDictionary can be safely iterated.
+                foreach (var triggerEntry in _triggers)
                 {
-                    OnTriggered?.Invoke(this, item);
+                    // triggerEntry is KeyValuePair<string, TriggerCondition>
+                    // triggerEntry.Key is the trigger name (string)
+                    // triggerEntry.Value is the TriggerCondition delegate
+
+                    if (triggerEntry.Value(item)) // Check the condition using the delegate
+                    {
+                        // Fire the new event, TriggerActivated, with TriggerEventArgs
+                        TriggerActivated?.Invoke(this, new TriggerEventArgs<TItem>(triggerEntry.Key, item));
+                    }
                 }
             }
         }
