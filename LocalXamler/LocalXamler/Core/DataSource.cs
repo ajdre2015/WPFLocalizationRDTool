@@ -5,6 +5,12 @@ namespace LocalXamler.Core
 {
     public class DataSource<TItem, TValue> where TItem : ITimestampedData<TValue>
     {
+        public delegate bool TriggerCondition(TItem item);
+
+        public event EventHandler<TItem> OnTriggered;
+
+        private TriggerCondition _activeTriggerCondition;
+
         public string Name { get; private set; }
         public string Id { get; private set; }
         public bool IsHealthy { get; private set; }
@@ -33,9 +39,20 @@ namespace LocalXamler.Core
             IsHealthy = isHealthy;
         }
 
+        public void SetTrigger(TriggerCondition newCondition)
+        {
+            _activeTriggerCondition = newCondition;
+        }
+
         public void Add(TItem item)
         {
             _dataQueue.Enqueue(item);
+
+            // Check and invoke trigger
+            if (_activeTriggerCondition != null && _activeTriggerCondition(item))
+            {
+                OnTriggered?.Invoke(this, item);
+            }
         }
 
         public void AddRange(IEnumerable<TItem> items)
@@ -47,6 +64,12 @@ namespace LocalXamler.Core
             foreach (var item in items)
             {
                 _dataQueue.Enqueue(item);
+
+                // Check and invoke trigger for each item
+                if (_activeTriggerCondition != null && _activeTriggerCondition(item))
+                {
+                    OnTriggered?.Invoke(this, item);
+                }
             }
         }
 
